@@ -1,0 +1,120 @@
+# Description: AWS VPC template with an Amazon RDS database
+# Revision: 2
+# Date: July 20, 2026
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Creates an AWS VPC with subnets across three Availability Zones and an Amazon RDS MySQL database in the us-west-2 Region.
+
+Rules:
+  ValidateRegion:
+    Assertions:
+      - Assert: !Equals
+          - !Ref AWS::Region
+          - us-west-2
+        AssertDescription: This template must be deployed in the US West Oregon Region us-west-2.
+
+Resources:
+  StudentVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: VPC-ANdCUR3056
+
+  SubnetAvailabilityZone1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref StudentVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: VPC-ANdCUR3056-Subnet-AZ1
+
+  SubnetAvailabilityZone2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref StudentVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: VPC-ANdCUR3056-Subnet-AZ2
+
+  SubnetAvailabilityZone3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref StudentVPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select
+        - 2
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: VPC-ANdCUR3056-Subnet-AZ3
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the Amazon RDS database
+      VpcId: !Ref StudentVPC
+      Tags:
+        - Key: Name
+          Value: VPC-ANdCUR3056-RDS-Security-Group
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for the Amazon RDS database
+      SubnetIds:
+        - !Ref SubnetAvailabilityZone1
+        - !Ref SubnetAvailabilityZone2
+        - !Ref SubnetAvailabilityZone3
+      Tags:
+        - Key: Name
+          Value: VPC-ANdCUR3056-RDS-Subnet-Group
+
+  RdsInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      VPCSecurityGroups:
+        - !GetAtt RDSSecurityGroup.GroupId
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      AllocatedStorage: '20'
+      StorageType: gp2
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: playground-db
+      Engine: mysql
+      MasterUsername: Admin
+      MasterUserPassword: CloudAcademy123!
+      PubliclyAccessible: false
+
+Outputs:
+  VPCID:
+    Description: The ID of the newly created VPC.
+    Value: !Ref StudentVPC
+
+  VPCCIDRBlock:
+    Description: The CIDR block assigned to the VPC.
+    Value: !GetAtt StudentVPC.CidrBlock
+
+  VPCName:
+    Description: The name assigned to the VPC.
+    Value: VPC-ANdCUR3056
+
+  RDSSecurityGroupID:
+    Description: The ID of the RDS security group.
+    Value: !GetAtt RDSSecurityGroup.GroupId
+
+  RDSEndpoint:
+    Description: The connection endpoint for the RDS database.
+    Value: !GetAtt RdsInstance.Endpoint.Address
