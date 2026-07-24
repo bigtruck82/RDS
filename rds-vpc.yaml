@@ -1,6 +1,6 @@
 # Description: AWS VPC template with an Amazon RDS database
 # Revision: 2
-# Date: July 20, 2026
+# Date: July 24, 2026
 
 AWSTemplateFormatVersion: '2010-09-09'
 
